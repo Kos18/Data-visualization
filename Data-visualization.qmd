@@ -1,0 +1,477 @@
+---
+title: "Data visualization 24h Le Mans"
+format: html
+server: shiny
+---
+
+```{r}
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+```
+
+```{r}
+Le_Mans <- read.csv('C:/Users/costi/Desktop/Data visualization/Hour By Hour Race Analysis.csv')
+head(Le_Mans)
+```
+
+```{r}
+first_hour_data <- subset(Le_Mans, Hour == 1 & Status == 'Running ')
+teams_first_hour <- length(unique(first_hour_data$Team))
+cars_first_hour <- length((first_hour_data$Car))
+print(paste("Teams in the first hour:", teams_first_hour))
+print(paste("Cars in the first hour:", cars_first_hour))
+```
+
+```{r}
+last_hour_data <- subset(Le_Mans, Hour == 24 & Status == 'Running ')
+teams_last_hour <- length(unique(last_hour_data$Team))
+cars_last_hour <- length((last_hour_data$Car))
+print(paste("Teams in the last hour:", teams_last_hour))
+print(paste("Cars in the last hour:", cars_last_hour))
+```
+```{r}
+# Assuming 'Le_Mans' is your data frame
+library(ggplot2)
+library(gridExtra)
+
+# Filter the data for the first and last hour
+first_hour_data <- subset(Le_Mans, Hour == 1 & Status == 'Running ')
+last_hour_data <- subset(Le_Mans, Hour == 24 & Status == 'Running ')
+first_last_hour_data <- rbind(first_hour_data, last_hour_data)
+
+# Plot for the first hour
+plot_first_hour <- ggplot(first_hour_data, aes(x = Category, fill = Category)) +
+  geom_bar() +
+  ggtitle("Distribution of Car Categories (First Hour)") +
+  xlab("Car Category") +
+  ylab("Number of Cars") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_brewer(palette = "Set3")  # Use a different palette if needed
+
+# Plot for the last hour
+plot_last_hour <- ggplot(last_hour_data, aes(x = Category, fill = Category)) +
+  geom_bar() +
+  ggtitle("Distribution of Car Categories (Last Hour)") +
+  xlab("Car Category") +
+  ylab("Number of Cars") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_brewer(palette = "Set3")  # Use a different palette if needed
+
+# Plot for both hours
+plot_both_hours <- ggplot(first_last_hour_data, aes(x = Category, fill = as.factor(Hour))) +
+  geom_bar(position = "dodge") +
+  ggtitle("Distribution of Cars Across Categories (First and Last Hour)") +
+  xlab("Car Category") +
+  ylab("Number of Cars") +
+  scale_fill_brewer(palette = "Set3") +  # Use a different palette if needed
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Arrange plots in a matrix
+grid.arrange(plot_first_hour, plot_last_hour, plot_both_hours, ncol = 3)
+
+
+```
+
+```{r}
+#Plot cars type first hour
+first_hour_data <- subset(Le_Mans, Hour == 1)
+ggplot(first_hour_data, aes(x = Car, fill = Category)) +
+  geom_bar() +
+  ggtitle("Distribution of Cars Across Categories (First Hour)") +
+  xlab("Car") +
+  ylab("Number of Cars") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  
+```
+
+```{r}
+#Plot cars type last hour
+first_hour_data <- subset(Le_Mans, Hour == 24)
+ggplot(first_hour_data, aes(x = Car, fill = Category)) +
+  geom_bar() +
+  ggtitle("Distribution of Cars Across Categories (Last Hour)") +
+  xlab("Car") +
+  ylab("Number of Cars") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+```
+
+```{r}
+#Cars per team
+ggplot(Le_Mans, aes(x = Hour, fill = Status)) +
+  geom_bar(stat = "count") +
+  ggtitle("Number of Cars per Team") +
+  xlab("Team") +
+  ylab("Number of Cars")
+```
+
+```{r}
+hour_24_data <- subset(Le_Mans, Hour == 24)
+laps_by_car_team <- hour_24_data |>
+  group_by(Car, Team) |>
+  summarize(Total_Laps = sum(Laps))
+
+top_3_cars <- laps_by_car_team |>
+  arrange(desc(Total_Laps)) |>
+  head(3)
+
+print(top_3_cars)
+```
+```{r}
+cars_teams <- c("Porsche 963", "Cadillac V-Series.R", "Ferrari 499P")
+selected_teams <- c("Porsche Penske Motorsport", "Cadillac Racing", "Ferrari AF Corse")
+
+selected_data <- Le_Mans |>
+  filter(Car %in% cars_teams | Team %in% selected_teams)
+
+convert_time_to_seconds <- function(time_string) {
+  parts <- strsplit(as.character(time_string), ":", fixed = TRUE)[[1]]
+  hours <- as.numeric(parts[1])
+  minutes <- as.numeric(parts[2])
+  seconds <- as.numeric(parts[3])
+  total_seconds <- hours * 3600 + minutes * 60 + seconds
+  return(total_seconds)
+}
+
+selected_data$Total_Time <- sapply(selected_data$Total_Time, convert_time_to_seconds)
+
+total_time_summary <- selected_data |>
+  group_by(Car, Team) |>
+  summarize(Total_Time = sum(Total_Time, na.rm = TRUE))
+
+print(total_time_summary)
+
+```
+
+
+```{r}
+#Porsche, Ferrari, Toyota, Cadillac 
+
+first_hour_data <- subset(Le_Mans, Hour == 1)
+porsche_count <- sum(grepl("Porsche", first_hour_data$Car, ignore.case = TRUE))
+ferrari_count <- sum(grepl("Ferrari", first_hour_data$Car, ignore.case = TRUE))
+toyota_count <- sum(grepl("Toyota", first_hour_data$Car, ignore.case = TRUE))
+cadillac_count <- sum(grepl("Cadillac", first_hour_data$Car, ignore.case = TRUE))
+total_cars_count <- nrow(first_hour_data)
+porsche_proportion <- porsche_count / total_cars_count
+ferrari_proportion <- ferrari_count / total_cars_count
+toyota_proportion <- toyota_count / total_cars_count
+cadillac_proportion <- cadillac_count / total_cars_count
+pie(c(porsche_proportion, ferrari_proportion, toyota_proportion, cadillac_proportion, 1 - (porsche_proportion + ferrari_proportion + toyota_proportion + cadillac_proportion)), 
+    labels = c(paste("Porsche (", round(porsche_proportion * 100), "%)"), 
+               paste("Ferrari (", round(ferrari_proportion * 100), "%)"), 
+               paste("Toyota (", round(toyota_proportion * 100), "%)"), 
+               paste("Cadillac (", round(cadillac_proportion * 100), "%"),
+               "Other"),
+    col = c("lightgrey", "red", "skyblue","darkblue", "green"),
+    main = "Proportion of Car Brands in the First Hour")
+```
+
+```{r}
+#Porsche, Ferrari, Toyota, Cadillac 
+
+first_hour_data <- subset(Le_Mans, Hour == 24)
+porsche_count <- sum(grepl("Porsche", first_hour_data$Car, ignore.case = TRUE))
+ferrari_count <- sum(grepl("Ferrari", first_hour_data$Car, ignore.case = TRUE))
+toyota_count <- sum(grepl("Toyota", first_hour_data$Car, ignore.case = TRUE))
+cadillac_count <- sum(grepl("Cadillac", first_hour_data$Car, ignore.case = TRUE))
+total_cars_count <- nrow(first_hour_data)
+porsche_proportion <- porsche_count / total_cars_count
+ferrari_proportion <- ferrari_count / total_cars_count
+toyota_proportion <- toyota_count / total_cars_count
+cadillac_proportion <- cadillac_count / total_cars_count
+pie(c(porsche_proportion, ferrari_proportion, toyota_proportion, cadillac_proportion, 1 - (porsche_proportion + ferrari_proportion + toyota_proportion + cadillac_proportion)), 
+    labels = c(paste("Porsche (", round(porsche_proportion * 100), "%)"), 
+               paste("Ferrari (", round(ferrari_proportion * 100), "%)"), 
+               paste("Toyota (", round(toyota_proportion * 100), "%)"), 
+               paste("Cadillac (", round(cadillac_proportion * 100), "%"),
+               "Other"),
+    col = c("lightgrey", "red", "skyblue","darkblue", "green"),
+    main = "Proportion of Car Brands in the First Hour")
+```
+```{r}
+ggplot(Le_Mans, aes(x = Hour, y = Laps, fill = Team)) +
+  geom_area(position = "stack") +
+  labs(title = "Stacked Area Plot of Laps Over Hours for Every Team",
+       x = "Hour", y = "Number of Laps") +
+  theme_minimal()
+```
+
+
+
+```{r}
+
+ggplot(Le_Mans, aes(x = Laps, y = Total_Time)) +
+  geom_point() +
+  labs(title = "Scatter Plot of Laps vs. Total Time by Team", x = "Laps", y = "Total Time") +
+  facet_wrap(~ Team, scales = "free_y") +
+  theme_minimal()
+```
+
+```{r}
+ggplot(Le_Mans, aes(x = Laps, y = 1)) +
+  geom_point() +
+  labs(title = "Scatter Plot of Laps", x = "Laps", y = "Count of Observations") +
+  theme_minimal()
+```
+```{r}
+ggplot(Le_Mans, aes(x = Hour, y = Laps, group = 1)) +
+  geom_line() +
+  labs(title = "Line Plot of Laps over Hours", x = "Hour", y = "Laps")
+
+```
+```{r}
+ggplot(Le_Mans, aes(x = Team, y = Laps, fill = Team)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Bar Chart of Laps by Team", x = "Team", y = "Laps") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+```{r}
+
+selected_teams <- c("Action Express Racing", "Cadillac Racing", "Ferrari AF Corse", "Hertz Team JOTA", "Porsche Penske Motorsport")
+
+selected_data <- Le_Mans |>
+  filter(Team %in% selected_teams)
+
+ggplot(selected_data, aes(x = Team, y = Total_Time, fill = Team)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Bar Chart of Total Time by Team",
+       x = "Team", y = "Total Time") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+```{r}
+
+selected_teams <- c("Action Express Racing", "Cadillac Racing", "Ferrari AF Corse", "Hertz Team JOTA", "Porsche Penske Motorsport")
+
+selected_data <- Le_Mans |>
+  filter(Team %in% selected_teams)
+
+car_counts <- selected_data |>
+  group_by(Hour, Team) |>
+  summarise(Count = n())
+
+ggplot(car_counts, aes(x = Hour, y = Count, fill = Team)) +
+  geom_area(position = "stack") +
+  labs(title = "Stacked Area Plot of Cars Over Hours",
+       x = "Hour", y = "Number of Cars") +
+  theme_minimal()
+
+
+```
+```{r}
+car_counts <- Le_Mans |>
+  group_by(Hour, Team)|>
+  summarise(Count = n())
+
+ggplot(car_counts, aes(x = Hour, y = Count, fill = Team)) +
+  geom_area(position = "stack") +
+  labs(title = "Stacked Area Plot of Cars Over Hours for All Teams",
+       x = "Hour", y = "Number of Cars") +
+  theme_minimal()
+
+```
+
+
+```{r}
+top_teams <- c("Action Express Racing", "Cadillac Racing", "Ferrari AF Corse", "Hertz Team JOTA", "Porsche Penske Motorsport")
+
+top_teams_data <- Le_Mans |>
+  filter(Team %in% top_teams)
+
+ggplot(top_teams_data, aes(x = Laps, y = Total_Time)) +
+  geom_point() +
+  labs(title = "Scatter Plot of Laps vs. Total Time by Team",
+       x = "Laps", y = "Total Time") +
+  facet_wrap(~ Team, scales = "free_y") +
+  theme_minimal()
+```
+```{r}
+
+selected_teams <- c("Action Express Racing", "Cadillac Racing", "Ferrari AF Corse", "Hertz Team JOTA", "Porsche Penske Motorsport")
+
+selected_data <- Le_Mans |>
+  filter(Team %in% selected_teams)
+
+ggplot(selected_data, aes(x = Laps, y = Total_Time)) +
+  geom_point() +
+  labs(title = "Scatter Plot of Laps vs. Total Time by Team",
+       x = "Laps", y = "Total Time") +
+  facet_wrap(~ Team, scales = "free_y") +
+  theme_minimal() +
+  theme(strip.text.y = element_blank(),
+        strip.background = element_blank())
+
+```
+
+
+```{r}
+ggplot(Le_Mans, aes(x = Laps, y = Car)) +
+  geom_point() +
+  labs(title = "Scatter Plot of Laps by Car Type", x = "Laps", y = "Car Type") +
+  theme_minimal()
+
+```
+```{r}
+first_hour_data <- subset(Le_Mans, Hour == 1)
+
+ggplot(first_hour_data, aes(x = Laps, y = Car)) +
+  geom_point() +
+  labs(title = "Scatter Plot of Laps by Car Type (First Hour)", x = "Laps", y = "Car Type") +
+  theme_minimal()
+
+```
+
+
+
+```{r}
+porsche_proportions <- sapply(1:24, function(hour) {
+  hour_data <- subset(Le_Mans, Hour == hour)
+  porsche_count <- sum(grepl("Porsche", hour_data$Car, ignore.case = TRUE))
+  total_cars_count <- nrow(hour_data)
+  porsche_count / total_cars_count
+})
+
+ggplot(data.frame(Hour = 1:24, Proportion = porsche_proportions), aes(x = Hour, y = Proportion)) +
+  geom_line(color = "blue") +
+  ggtitle("Proportion of Porsche Cars Over 24 Hours") +
+  xlab("Hour") +
+  ylab("Proportion of Porsche Cars")
+
+```
+
+```{r}
+#Porsche in 24 H
+
+porsche_proportions <- sapply(1:24, function(hour) {
+  hour_data <- subset(Le_Mans, Hour == hour)
+  porsche_count <- sum(grepl("Porsche", hour_data$Car, ignore.case = TRUE))
+  total_cars_count <- nrow(hour_data)
+  porsche_count / total_cars_count
+})
+
+ggplot(data.frame(Hour = 1:24, Proportion = porsche_proportions), aes(x = Hour, y = Proportion)) +
+  geom_line(color = "blue") +
+  ggtitle("Proportion of Porsche Cars Over 24 Hours") +
+  xlab("Hour") +
+  ylab("Proportion of Porsche Cars")
+
+
+```
+
+```{r}
+porsche_proportions <- sapply(1:24, function(hour) {
+  hour_data <- subset(Le_Mans, Hour == hour)
+  porsche_count <- sum(grepl("Porsche", hour_data$Car, ignore.case = TRUE))
+  total_cars_count <- nrow(hour_data)
+  porsche_count / total_cars_count
+})
+```
+
+```{r}
+#Create a line chart
+ggplot(data.frame(Hour = 1:24, Proportion = porsche_proportions), aes(x = Hour, y = Proportion)) +
+  geom_line(color = "blue", size = 1.5) +
+  ggtitle("Proportion of Porsche Cars Over 24 Hours") +
+  xlab("Hour") +
+  ylab("Proportion of Porsche Cars") +
+  theme_minimal() 
+
+```
+
+```{r}
+porsche_proportions <- sapply(1:24, function(hour) {
+  hour_data <- subset(Le_Mans, Hour == hour)
+  porsche_count <- sum(grepl("Porsche", hour_data$Car, ignore.case = TRUE))
+  total_porsche_count <- sum(grepl("Porsche", Le_Mans$Car, ignore.case = TRUE))
+  porsche_count / total_porsche_count
+})
+
+
+
+ggplot(data.frame(Hour = 1:24, Proportion = porsche_proportions), aes(x = Hour, y = Proportion)) +
+  geom_line(color = "blue", size = 1.5) +
+  ggtitle("Proportion of Porsche Cars Over 24 Hours") +
+  xlab("Hour") +
+  ylab("Proportion of Porsche Cars") +
+  theme_minimal() 
+```
+```{r}
+cars_count_per_hour <- sapply(1:24, function(hour) {
+  hour_data <- subset(Le_Mans, Hour == hour)
+  total_cars_count <- nrow(hour_data)
+  total_cars_count
+})
+ggplot(data.frame(Hour = 1:24, CarsCount = cars_count_per_hour), aes(x = Hour, y = CarsCount)) +
+  geom_line(color = "blue", size = 1.5) +
+  ggtitle("Count of Cars Over 24 Hours") +
+  xlab("Hour") +
+  ylab("Count of Cars") +
+  theme_minimal()  
+
+```
+
+```{r}
+tire_distribution <- Le_Mans |>
+  group_by(Tyres) |>
+  summarise(count = n())
+
+ggplot(tire_distribution, aes(x = Tyres, y = count, fill = Tyres)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Distribution of Tire Types",
+       x = "Tire Types",
+       y = "Count") +
+  theme_minimal()
+#Time series analyzes 
+
+```
+
+
+
+
+
+
+```{r}
+porsche_data <- Le_Mans[Le_Mans$Is_Porsche == "Porsche", ]
+unique_porsche_teams <- length(unique(porsche_data$Team))
+print(unique_porsche_teams)
+```
+
+```{r}
+# Count unique car models in the entire dataset
+unique_car_models_count <- length(unique(Le_Mans$Car))
+
+
+print(paste("Total unique car models in the dataset:", unique_car_models_count))
+```
+
+
+```{r}
+# Subset the data for the first hour
+first_hour_data <- subset(Le_Mans, Hour == 1)
+
+# Count unique cars in the first hour
+unique_cars_first_hour_count <- length((first_hour_data$Car))
+
+print(paste("Total unique cars in the first hour:", unique_cars_first_hour_count))
+```
+
+
+```{r}
+ggplot(Le_Mans, aes(x = Hour, y = Total_Time)) +
+  geom_line(color = "blue") +
+  ggtitle("Time Series Plot of Total Time over Hours") +
+  xlab("Hour") +
+  ylab("Total Time")
+```
+```{r}
+ggplot(Le_Mans, aes(x = Team, y = Total_Time)) +
+  geom_boxplot(fill = "lightblue") +
+  ggtitle("Boxplot of Total Time by Team") +
+  xlab("Team") +
+  ylab("Total Time")
+
+```
+
+
