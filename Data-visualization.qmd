@@ -34,14 +34,12 @@ print(paste("Teams in the last hour:", teams_last_hour))
 print(paste("Cars in the last hour:", cars_last_hour))
 ```
 ```{r}
-
-
-# Filter the data for the first and last hour
 first_hour_data <- subset(Le_Mans, Hour == 1 & Status == 'Running ')
 last_hour_data <- subset(Le_Mans, Hour == 24 & Status == 'Running ')
 first_last_hour_data <- rbind(first_hour_data, last_hour_data)
+```
 
-# Plot for the first hour
+```{r}
 plot_first_hour <- ggplot(first_hour_data, aes(x = Category, fill = Category)) +
   geom_bar() +
   ggtitle("Distribution of Car Categories (First Hour)") +
@@ -50,7 +48,6 @@ plot_first_hour <- ggplot(first_hour_data, aes(x = Category, fill = Category)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   scale_fill_brewer(palette = "Set3") + guides(fill = "none")
 
-# Plot for the last hour
 plot_last_hour <- ggplot(last_hour_data, aes(x = Category, fill = Category)) +
   geom_bar() +
   ggtitle("Distribution of Car Categories (Last Hour)") +
@@ -59,7 +56,6 @@ plot_last_hour <- ggplot(last_hour_data, aes(x = Category, fill = Category)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   scale_fill_brewer(palette = "Set3") + guides(fill = "none")
 
-# Arrange plots in a matrix
 grid.arrange(plot_first_hour, plot_last_hour, ncol = 2)
 
 
